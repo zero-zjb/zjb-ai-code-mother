@@ -1,6 +1,13 @@
 spring:
   application:
     name: zjb-ai-code-mother-backend
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.222.128:3306/zjb-ai-code-mother
+    username: root
+    password: 123456
+
 server:
   port: 8123
   servlet:
