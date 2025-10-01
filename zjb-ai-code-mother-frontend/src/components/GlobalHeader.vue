@@ -19,65 +19,89 @@
       </div>
 
       <!-- 右侧用户信息 -->
-      <div class="header-right">
-        <a-button type="primary" @click="handleLogin"> 登录 </a-button>
+<!--      <div class="header-right">-->
+<!--        <a-button type="primary" @click="handleLogin"> 登录 </a-button>-->
+<!--      </div>-->
+
+      <div class="user-login-status">
+        <div v-if="loginUserStore.loginUser.id">
+          <a-dropdown>
+            <a-space>
+              <a-avatar :src="loginUserStore.loginUser.userAvatar" />
+              {{ loginUserStore.loginUser.userName ?? '无名' }}
+            </a-space>
+            <template #overlay>
+              <a-menu>
+                <a-menu-item key="logout" @click="doLogout">
+                  <LogoutOutlined />
+                  退出登录
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
+        </div>
+        <div v-else>
+          <a-button type="primary" href="/user/login">登录</a-button>
+        </div>
       </div>
+
     </div>
   </a-layout-header>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, h } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLoginUserStore } from '@/stores/loginUser.ts'
+import {userLogout} from "@/api/userController.ts";
+import {MenuProps, message} from "ant-design-vue";
+import {LogoutOutlined, HomeOutlined} from "@ant-design/icons-vue";
+
+const loginUserStore = useLoginUserStore()
+loginUserStore.fetchLoginUser()
+
 
 const router = useRouter()
 const selectedKeys = ref<string[]>(['home'])
 
 // 菜单配置
-const menuItems = reactive([
+// 菜单配置项
+const originItems = [
   {
-    key: 'home',
-    label: '首页',
-    path: '/',
+    key: '/',
+    icon: () => h(HomeOutlined),
+    label: '主页',
+    title: '主页',
   },
   {
-    key: 'about',
-    label: '关于',
-    path: '/about',
+    key: '/admin/userManage',
+    label: '用户管理',
+    title: '用户管理',
   },
   {
-    key: 'tools',
-    label: '工具',
-    children: [
-      {
-        key: 'code-generator',
-        label: '代码生成器',
-        path: '/tools/code-generator',
-      },
-      {
-        key: 'api-docs',
-        label: 'API文档',
-        path: '/tools/api-docs',
-      },
-    ],
+    key: 'others',
+    label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
+    title: '编程导航',
   },
-  {
-    key: 'resources',
-    label: '资源',
-    children: [
-      {
-        key: 'tutorials',
-        label: '教程',
-        path: '/resources/tutorials',
-      },
-      {
-        key: 'examples',
-        label: '示例',
-        path: '/resources/examples',
-      },
-    ],
-  },
-])
+]
+
+// 过滤菜单项
+const filterMenus = (menus = [] as MenuProps['items']) => {
+  return menus?.filter((menu) => {
+    const menuKey = menu?.key as string
+    if (menuKey?.startsWith('/admin')) {
+      const loginUser = loginUserStore.loginUser
+      if (!loginUser || loginUser.userRole !== 'admin') {
+        return false
+      }
+    }
+    return true
+  })
+}
+
+// 展示在菜单的路由数组
+const menuItems = computed<MenuProps['items']>(() => filterMenus(originItems))
+
 
 // 处理菜单点击
 const handleMenuClick = ({ key }: { key: string }) => {
@@ -103,7 +127,21 @@ const handleMenuClick = ({ key }: { key: string }) => {
 
 // 处理登录
 const handleLogin = () => {
-  console.log('登录功能待实现')
+  router.push('/user/login');
+}
+
+// 处理登出
+const doLogout = async () => {
+  const res = await userLogout();
+  if (res.data.code === 0) {
+    loginUserStore.setLoginUser({
+      userName: "未登录",
+    })
+    await router.push('/user/login')
+    message.success('退出成功')
+  }else {
+    message.error("退出失败：" + res.data.message)
+  }
 }
 </script>
 
@@ -157,7 +195,7 @@ const handleLogin = () => {
   background: transparent;
 }
 
-.header-right {
+.user-login-status {
   display: flex;
   align-items: center;
 }
