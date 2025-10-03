@@ -19,9 +19,9 @@
       </div>
 
       <!-- 右侧用户信息 -->
-<!--      <div class="header-right">-->
-<!--        <a-button type="primary" @click="handleLogin"> 登录 </a-button>-->
-<!--      </div>-->
+      <!--      <div class="header-right">-->
+      <!--        <a-button type="primary" @click="handleLogin"> 登录 </a-button>-->
+      <!--      </div>-->
 
       <div class="user-login-status">
         <div v-if="loginUserStore.loginUser.id">
@@ -44,22 +44,20 @@
           <a-button type="primary" href="/user/login">登录</a-button>
         </div>
       </div>
-
     </div>
   </a-layout-header>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h } from 'vue'
+import { ref, h, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/loginUser.ts'
-import {userLogout} from "@/api/userController.ts";
-import {MenuProps, message} from "ant-design-vue";
-import {LogoutOutlined, HomeOutlined} from "@ant-design/icons-vue";
+import { userLogout } from '@/api/userController.ts'
+import { MenuProps, message } from 'ant-design-vue'
+import { LogoutOutlined, HomeOutlined } from '@ant-design/icons-vue'
 
 const loginUserStore = useLoginUserStore()
 loginUserStore.fetchLoginUser()
-
 
 const router = useRouter()
 const selectedKeys = ref<string[]>(['home'])
@@ -102,45 +100,26 @@ const filterMenus = (menus = [] as MenuProps['items']) => {
 // 展示在菜单的路由数组
 const menuItems = computed<MenuProps['items']>(() => filterMenus(originItems))
 
-
 // 处理菜单点击
-const handleMenuClick = ({ key }: { key: string }) => {
-  // 查找菜单项路径
-  const findPath = (items: any[], targetKey: string): string | null => {
-    for (const item of items) {
-      if (item.key === targetKey && item.path) {
-        return item.path
-      }
-      if (item.children) {
-        const found = findPath(item.children, targetKey)
-        if (found) return found
-      }
-    }
-    return null
+const handleMenuClick: MenuProps['onClick'] = (e) => {
+  const key = e.key as string
+  selectedKeys.value = [key]
+  if (key.startsWith('/')) {
+    router.push(key)
   }
-
-  const path = findPath(menuItems, key)
-  if (path) {
-    router.push(path)
-  }
-}
-
-// 处理登录
-const handleLogin = () => {
-  router.push('/user/login');
 }
 
 // 处理登出
 const doLogout = async () => {
-  const res = await userLogout();
+  const res = await userLogout()
   if (res.data.code === 0) {
     loginUserStore.setLoginUser({
-      userName: "未登录",
+      userName: '未登录',
     })
     await router.push('/user/login')
     message.success('退出成功')
-  }else {
-    message.error("退出失败：" + res.data.message)
+  } else {
+    message.error('退出失败：' + res.data.message)
   }
 }
 </script>
