@@ -1,14 +1,10 @@
 package com.zjb.zjbaicodemother.controller;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
-import com.mybatisflex.core.query.QueryWrapper;
 import com.zjb.zjbaicodemother.annotation.AuthCheck;
 import com.zjb.zjbaicodemother.common.BaseResponse;
 import com.zjb.zjbaicodemother.common.DeleteRequest;
 import com.zjb.zjbaicodemother.common.ResultUtils;
-import com.zjb.zjbaicodemother.constant.AppConstant;
 import com.zjb.zjbaicodemother.constant.UserConstant;
 import com.zjb.zjbaicodemother.exception.BusinessException;
 import com.zjb.zjbaicodemother.exception.ErrorCode;
@@ -17,26 +13,13 @@ import com.zjb.zjbaicodemother.model.dto.app.AppAddRequest;
 import com.zjb.zjbaicodemother.model.dto.app.AppAdminUpdateRequest;
 import com.zjb.zjbaicodemother.model.dto.app.AppQueryRequest;
 import com.zjb.zjbaicodemother.model.dto.app.AppUpdateRequest;
-import com.zjb.zjbaicodemother.model.entity.User;
-import com.zjb.zjbaicodemother.model.enums.CodeGenTypeEnum;
+import com.zjb.zjbaicodemother.model.entity.App;
 import com.zjb.zjbaicodemother.model.vo.AppVO;
+import com.zjb.zjbaicodemother.service.AppService;
 import com.zjb.zjbaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.zjb.zjbaicodemother.model.entity.App;
-import com.zjb.zjbaicodemother.service.AppService;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDateTime;
-import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 应用 控制层。

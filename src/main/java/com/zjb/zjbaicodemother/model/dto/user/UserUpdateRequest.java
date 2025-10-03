@@ -1,4 +1,4 @@
-package com.zjb.zjbaicodemother.model.dto;
+package com.zjb.zjbaicodemother.model.dto.user;
 
 import lombok.Data;
 

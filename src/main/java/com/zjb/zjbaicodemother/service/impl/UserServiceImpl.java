@@ -9,7 +9,7 @@ import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.zjb.zjbaicodemother.constant.UserConstant;
 import com.zjb.zjbaicodemother.exception.BusinessException;
 import com.zjb.zjbaicodemother.exception.ErrorCode;
-import com.zjb.zjbaicodemother.model.dto.UserQueryRequest;
+import com.zjb.zjbaicodemother.model.dto.user.UserQueryRequest;
 import com.zjb.zjbaicodemother.model.entity.User;
 import com.zjb.zjbaicodemother.mapper.UserMapper;
 import com.zjb.zjbaicodemother.model.enums.UserRoleEnum;

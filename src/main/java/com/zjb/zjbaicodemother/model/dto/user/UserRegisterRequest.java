@@ -1,15 +1,17 @@
-package com.zjb.zjbaicodemother.model.dto;
+package com.zjb.zjbaicodemother.model.dto.user;
 
 import lombok.Data;
 
 import java.io.Serializable;
+
 /**
- * 用户登录请求
+ * 用户注册请求体
  *
  * @author zjb
  */
+
 @Data
-public class UserLoginRequest implements Serializable {
+public class UserRegisterRequest implements Serializable {
 
     private static final long serialVersionUID = 3191241716373120793L;
 
@@ -22,4 +24,9 @@ public class UserLoginRequest implements Serializable {
      * 密码
      */
     private String userPassword;
+
+    /**
+     * 确认密码
+     */
+    private String checkPassword;
 }
