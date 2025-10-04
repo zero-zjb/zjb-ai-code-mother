@@ -3,6 +3,7 @@ package com.zjb.zjbaicodemother.core.saver;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
+import com.zjb.zjbaicodemother.constant.AppConstant;
 import com.zjb.zjbaicodemother.exception.BusinessException;
 import com.zjb.zjbaicodemother.exception.ErrorCode;
 import com.zjb.zjbaicodemother.model.enums.CodeGenTypeEnum;
@@ -17,13 +18,13 @@ import java.nio.charset.StandardCharsets;
 public abstract class CodeFileSaverTemplate<T> {
 
     //文件保存根目录
-    private static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
+    private static final String FILE_SAVE_ROOT_DIR = AppConstant.CODE_OUTPUT_ROOT_DIR;
 
-    public final File saveCode(T result) {
+    public final File saveCode(T result, Long appId) {
         // 1. 验证参数
         validateInput(result);
         // 2. 创建唯一目录
-        String baseDirPath = buildUniquePath();
+        String baseDirPath = buildUniquePath(appId);
         // 3. 保存文件
         saveFiles(result, baseDirPath);
         // 4. 返回目录文件对象
@@ -44,11 +45,15 @@ public abstract class CodeFileSaverTemplate<T> {
     /**
      * 构建唯一目录路径（不能子类覆盖）
      *
+     * @param appId 应用id
      * @return 唯一目录路径
      */
-    protected final String buildUniquePath() {
+    protected final String buildUniquePath(Long appId) {
+        if (appId == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "应用id不能为空");
+        }
         String codeType = getCodeType().getValue();
-        String uniquePath = StrUtil.format("{}_{}", codeType, IdUtil.getSnowflakeNextId());
+        String uniquePath = StrUtil.format("{}_{}", codeType, appId);
         String dirPath = FILE_SAVE_ROOT_DIR + File.separator + uniquePath;
         FileUtil.mkdir(dirPath);
         return dirPath;

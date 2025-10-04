@@ -9,8 +9,10 @@ import com.zjb.zjbaicodemother.model.dto.app.AppAdminUpdateRequest;
 import com.zjb.zjbaicodemother.model.dto.app.AppQueryRequest;
 import com.zjb.zjbaicodemother.model.dto.app.AppUpdateRequest;
 import com.zjb.zjbaicodemother.model.entity.App;
+import com.zjb.zjbaicodemother.model.entity.User;
 import com.zjb.zjbaicodemother.model.vo.AppVO;
 import jakarta.servlet.http.HttpServletRequest;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -20,6 +22,25 @@ import java.util.List;
  * @author zjb
  */
 public interface AppService extends IService<App> {
+
+    /**
+     * 聊天生成代码
+     *
+     * @param appId      应用 id
+     * @param message    消息
+     * @param loginUser  登录用户
+     * @return 代码
+     */
+    Flux<String> chatToGenCode(Long appId, String message, User loginUser);
+
+    /**
+     * 部署应用
+     *
+     * @param appId      应用 id
+     * @param loginUser  登录用户
+     * @return 返回部署应用的访问地址
+     */
+    String deployApp(Long appId, User loginUser);
 
     /**
      * 创建应用
