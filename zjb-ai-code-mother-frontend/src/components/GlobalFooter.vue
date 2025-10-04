@@ -1,58 +1,37 @@
 <template>
-  <a-layout-footer class="global-footer">
+  <a-layout-footer class="footer">
     <div class="footer-content">
-      <p class="copyright">智能AI代码生成平台项目 by 程序员zjb</p>
+      <p class="copyright">
+        <a
+          href="https://www.codefather.cn"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="author-link"
+        >
+          唐诗超级智能体 by 程序员zjb
+        </a>
+      </p>
     </div>
   </a-layout-footer>
 </template>
 
 <script setup lang="ts">
-// 页脚组件，无需额外逻辑
+// 无需额外的响应式数据
 </script>
 
 <style scoped>
-.global-footer {
-  background: #f0f2f5;
+.footer {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
   text-align: center;
-  padding: 16px 0;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  border-top: 1px solid #d9d9d9;
-}
-
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
+  padding: 20px;
+  margin-top: 40px;
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .copyright {
   margin: 0;
   color: #666;
   font-size: 14px;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .footer-content {
-    padding: 0 16px;
-  }
-
-  .copyright {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .footer-content {
-    padding: 0 12px;
-  }
-
-  .copyright {
-    font-size: 11px;
-  }
 }
 </style>

@@ -1,68 +1,69 @@
 <template>
-  <a-layout-header class="global-header">
-    <div class="header-content">
-      <!-- 左侧 Logo 和标题 -->
-      <div class="header-left">
-        <img src="@/assets/logo.png" alt="Logo" class="logo" />
-        <span class="site-title">智能AI代码生成平台</span>
-      </div>
-
-      <!-- 中间菜单 -->
-      <div class="header-menu">
+  <a-layout-header class="header">
+    <a-row :wrap="false">
+      <!-- 左侧：Logo和标题 -->
+      <a-col flex="300px">
+        <RouterLink to="/">
+          <div class="header-left">
+            <img class="logo" src="@/assets/logo.png" alt="Logo" />
+            <h1 class="site-title">智能AI零代码生成</h1>
+          </div>
+        </RouterLink>
+      </a-col>
+      <!-- 中间：导航菜单 -->
+      <a-col flex="auto">
         <a-menu
           v-model:selectedKeys="selectedKeys"
           mode="horizontal"
           :items="menuItems"
-          class="menu"
           @click="handleMenuClick"
         />
-      </div>
-
-      <!-- 右侧用户信息 -->
-      <!--      <div class="header-right">-->
-      <!--        <a-button type="primary" @click="handleLogin"> 登录 </a-button>-->
-      <!--      </div>-->
-
-      <div class="user-login-status">
-        <div v-if="loginUserStore.loginUser.id">
-          <a-dropdown>
-            <a-space>
-              <a-avatar :src="loginUserStore.loginUser.userAvatar" />
-              {{ loginUserStore.loginUser.userName ?? '无名' }}
-            </a-space>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item key="logout" @click="doLogout">
-                  <LogoutOutlined />
-                  退出登录
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
+      </a-col>
+      <!-- 右侧：用户操作区域 -->
+      <a-col>
+        <div class="user-login-status">
+          <div v-if="loginUserStore.loginUser.id">
+            <a-dropdown>
+              <a-space>
+                <a-avatar :src="loginUserStore.loginUser.userAvatar" />
+                {{ loginUserStore.loginUser.userName ?? '无名' }}
+              </a-space>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item @click="doLogout">
+                    <LogoutOutlined />
+                    退出登录
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
+          </div>
+          <div v-else>
+            <a-button type="primary" href="/user/login">登录</a-button>
+          </div>
         </div>
-        <div v-else>
-          <a-button type="primary" href="/user/login">登录</a-button>
-        </div>
-      </div>
-    </div>
+      </a-col>
+    </a-row>
   </a-layout-header>
 </template>
 
 <script setup lang="ts">
-import { ref, h, computed } from 'vue'
+import { computed, h, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { type MenuProps, message } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/loginUser.ts'
 import { userLogout } from '@/api/userController.ts'
-import { MenuProps, message } from 'ant-design-vue'
 import { LogoutOutlined, HomeOutlined } from '@ant-design/icons-vue'
 
 const loginUserStore = useLoginUserStore()
-loginUserStore.fetchLoginUser()
-
 const router = useRouter()
-const selectedKeys = ref<string[]>(['home'])
+// 当前选中菜单
+const selectedKeys = ref<string[]>(['/'])
+// 监听路由变化，更新当前选中菜单
+router.afterEach((to, from, next) => {
+  selectedKeys.value = [to.path]
+})
 
-// 菜单配置
 // 菜单配置项
 const originItems = [
   {
@@ -77,9 +78,14 @@ const originItems = [
     title: '用户管理',
   },
   {
+    key: '/admin/appManage',
+    label: '应用管理',
+    title: '应用管理',
+  },
+  {
     key: 'others',
-    label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
-    title: '编程导航',
+    label: h('a', { href: 'https://www.baidu.com', target: '_blank' }, '百度'),
+    title: '百度',
   },
 ]
 
@@ -104,45 +110,30 @@ const menuItems = computed<MenuProps['items']>(() => filterMenus(originItems))
 const handleMenuClick: MenuProps['onClick'] = (e) => {
   const key = e.key as string
   selectedKeys.value = [key]
+  // 跳转到对应页面
   if (key.startsWith('/')) {
     router.push(key)
   }
 }
 
-// 处理登出
+// 退出登录
 const doLogout = async () => {
   const res = await userLogout()
   if (res.data.code === 0) {
     loginUserStore.setLoginUser({
       userName: '未登录',
     })
+    message.success('退出登录成功')
     await router.push('/user/login')
-    message.success('退出成功')
   } else {
-    message.error('退出失败：' + res.data.message)
+    message.error('退出登录失败，' + res.data.message)
   }
 }
 </script>
 
 <style scoped>
-.global-header {
+.header {
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
-  max-width: 1200px;
-  margin: 0 auto;
   padding: 0 24px;
 }
 
@@ -153,54 +144,17 @@ const doLogout = async () => {
 }
 
 .logo {
-  height: 32px;
-  width: 32px;
+  height: 48px;
+  width: 48px;
 }
 
 .site-title {
+  margin: 0;
   font-size: 18px;
-  font-weight: 600;
   color: #1890ff;
 }
 
-.header-menu {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.menu {
-  border-bottom: none;
-  background: transparent;
-}
-
-.user-login-status {
-  display: flex;
-  align-items: center;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .header-content {
-    padding: 0 16px;
-  }
-
-  .site-title {
-    font-size: 16px;
-  }
-
-  .header-menu {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .header-content {
-    padding: 0 12px;
-  }
-
-  .site-title {
-    display: none;
-  }
+.ant-menu-horizontal {
+  border-bottom: none !important;
 }
 </style>

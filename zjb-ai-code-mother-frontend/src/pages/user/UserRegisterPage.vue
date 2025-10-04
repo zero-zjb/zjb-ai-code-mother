@@ -19,6 +19,7 @@
         name="checkPassword"
         :rules="[
           { required: true, message: '请确认密码' },
+          { min: 8, message: '密码不能小于 8 位' },
           { validator: validateCheckPassword },
         ]"
       >
@@ -36,10 +37,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue";
-import { userRegister } from "@/api/userController.ts";
-import { useRouter } from "vue-router";
-import { message } from "ant-design-vue";
+import { useRouter } from 'vue-router'
+import { userRegister } from '@/api/userController.ts'
+import { message } from 'ant-design-vue'
+import { reactive } from 'vue'
+
+const router = useRouter()
 
 const formState = reactive<API.UserRegisterRequest>({
   userAccount: '',
@@ -47,37 +50,45 @@ const formState = reactive<API.UserRegisterRequest>({
   checkPassword: '',
 })
 
-const router = useRouter()
-
-// 验证确认密码
-const validateCheckPassword = (_: any, value: string) => {
-  if (!value) {
-    return Promise.reject(new Error('请确认密码'))
+/**
+ * 验证确认密码
+ * @param rule
+ * @param value
+ * @param callback
+ */
+const validateCheckPassword = (rule: unknown, value: string, callback: (error?: Error) => void) => {
+  if (value && value !== formState.userPassword) {
+    callback(new Error('两次输入密码不一致'))
+  } else {
+    callback()
   }
-  if (value !== formState.userPassword) {
-    return Promise.reject(new Error('两次输入的密码不一致'))
-  }
-  return Promise.resolve()
 }
 
-const handleSubmit = async () => {
-  const res = await userRegister(formState)
+/**
+ * 提交表单
+ * @param values
+ */
+const handleSubmit = async (values: API.UserRegisterRequest) => {
+  const res = await userRegister(values)
+  // 注册成功，跳转到登录页面
   if (res.data.code === 0) {
-    message.success('注册成功，请登录')
+    message.success('注册成功')
     router.push({
       path: '/user/login',
-      replace: true
+      replace: true,
     })
   } else {
-    message.error("注册失败：" + res.data.message)
+    message.error('注册失败，' + res.data.message)
   }
 }
 </script>
 
-<style>
+<style scoped>
 #userRegisterPage {
-  max-width: 360px;
-  margin: 0 auto;
+  background: white;
+  max-width: 720px;
+  padding: 24px;
+  margin: 24px auto;
 }
 
 .title {
