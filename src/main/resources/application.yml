@@ -9,11 +9,27 @@ spring:
     password: 123456
   profiles:
     active: local
+  data:
+    redis:
+      host: 192.168.222.128
+      port: 6379
+      password: 123456
+      ttl: 3600
+      username: default
+  # session配置
+  session:
+    store-type: redis
+    # session 1天后过期
+    timeout: 86400
 
 server:
   port: 8123
   servlet:
     context-path: /api
+    #前端cookie 1天后过期
+    session:
+      cookie:
+        max-age: 86400
 
 # springdoc-openapi
 springdoc:

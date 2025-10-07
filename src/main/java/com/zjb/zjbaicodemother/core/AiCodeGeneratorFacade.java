@@ -1,6 +1,7 @@
 package com.zjb.zjbaicodemother.core;
 
 import com.zjb.zjbaicodemother.ai.AiCodeGeneratorService;
+import com.zjb.zjbaicodemother.ai.AiCodeGeneratorServiceFactory;
 import com.zjb.zjbaicodemother.ai.model.HtmlCodeResult;
 import com.zjb.zjbaicodemother.ai.model.MultiFileCodeResult;
 import com.zjb.zjbaicodemother.core.parser.CodeParserExecutor;
@@ -23,7 +24,7 @@ import java.io.File;
 public class AiCodeGeneratorFacade {
 
     @Resource
-    private AiCodeGeneratorService aiCodeGeneratorService;
+    private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
     /**
      * 统一入口：根据类型生成并保存代码
@@ -101,6 +102,7 @@ public class AiCodeGeneratorFacade {
      * @return 响应流
      */
     private Flux<String> generateAndSaveHtmlCodeStream(String userMessage, Long appId) {
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         Flux<String> result = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
         //当流式返回生成代码完成后，在保存代码
         return processCodeStream(result, CodeGenTypeEnum.HTML, appId);
@@ -114,6 +116,7 @@ public class AiCodeGeneratorFacade {
      * @return 响应流
      */
     private Flux<String> generateAndSaveMultiFileCodeStream(String userMessage, Long appId) {
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         Flux<String> result = aiCodeGeneratorService.generateMultiFileCodeStream(userMessage);
         //当流式返回生成代码完成后，在保存代码
         return processCodeStream(result, CodeGenTypeEnum.MULTI_FILE, appId);
@@ -127,6 +130,7 @@ public class AiCodeGeneratorFacade {
      * @return 保存的目录
      */
     private File generateAndSaveHtmlCode(String userMessage, Long appId) {
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         HtmlCodeResult result = aiCodeGeneratorService.generateHtmlCode(userMessage);
         return CodeFileSaverExecutor.executeSaver(result, CodeGenTypeEnum.HTML, appId);
     }
@@ -139,6 +143,7 @@ public class AiCodeGeneratorFacade {
      * @return 保存的目录
      */
     private File generateAndSaveMultiFileCode(String userMessage, Long appId) {
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         MultiFileCodeResult result = aiCodeGeneratorService.generateMultiFileCode(userMessage);
         return CodeFileSaverExecutor.executeSaver(result, CodeGenTypeEnum.MULTI_FILE, appId);
     }

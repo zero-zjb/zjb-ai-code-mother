@@ -83,6 +83,11 @@ const originItems = [
     title: '应用管理',
   },
   {
+    key: '/admin/chatManage',
+    label: '对话管理',
+    title: '对话管理',
+  },
+  {
     key: 'others',
     label: h('a', { href: 'https://www.baidu.com', target: '_blank' }, '百度'),
     title: '百度',
