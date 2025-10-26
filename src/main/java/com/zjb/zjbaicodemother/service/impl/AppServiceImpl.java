@@ -12,6 +12,8 @@ import com.zjb.zjbaicodemother.common.DeleteRequest;
 import com.zjb.zjbaicodemother.constant.AppConstant;
 import com.zjb.zjbaicodemother.constant.UserConstant;
 import com.zjb.zjbaicodemother.core.AiCodeGeneratorFacade;
+import com.zjb.zjbaicodemother.core.buider.VueProjectBuider;
+import com.zjb.zjbaicodemother.core.handler.StreamHandlerExecutor;
 import com.zjb.zjbaicodemother.exception.BusinessException;
 import com.zjb.zjbaicodemother.exception.ErrorCode;
 import com.zjb.zjbaicodemother.exception.ThrowUtils;
@@ -28,6 +30,7 @@ import com.zjb.zjbaicodemother.model.vo.AppVO;
 import com.zjb.zjbaicodemother.model.vo.UserVO;
 import com.zjb.zjbaicodemother.service.AppService;
 import com.zjb.zjbaicodemother.service.ChatHistoryService;
+import com.zjb.zjbaicodemother.service.ScreenshotService;
 import com.zjb.zjbaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,6 +62,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
     @Resource
     private ChatHistoryService chatHistoryService;
+    @Resource
+    private StreamHandlerExecutor streamHandlerExecutor;
+    @Resource
+    private VueProjectBuider vueProjectBuider;
+    @Resource
+    private ScreenshotService screenshotService;
 
     /**
      * 聊天生成代码
@@ -83,24 +92,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         ThrowUtils.throwIf(codeGenType == null, ErrorCode.SYSTEM_ERROR, "不支持的生成类型");
         //5.添加用户信息到对话历史
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-        //6.收集AI响应内容并在完成后记录到对话历史
-        StringBuilder aiCodeContent = new StringBuilder();
-        return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenType, appId)
-                .map(chunk -> {
-                    //实时收集代码片段
-                    aiCodeContent.append(chunk);
-                    return chunk;
-                }).doOnComplete(() -> {
-                    //流式响应完成后，添加AI消息到对话历史
-                    String contentString = aiCodeContent.toString();
-                    if(StrUtil.isNotBlank(contentString)){
-                        chatHistoryService.addChatMessage(appId, contentString, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-                    }
-                }).doOnError(error -> {
-                    //流式响应出错，添加错误消息到对话历史
-                    String errorMessage = "AI回复失败" + error.getMessage();
-                    chatHistoryService.addChatMessage(appId, errorMessage, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
-                });
+        //6.调用AI生成代码（流式）
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenType, appId);
+        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenType);
     }
 
     /**
@@ -134,22 +128,59 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         if(!sourceDir.exists() || !sourceDir.isDirectory()){
             ThrowUtils.throwIf(true, ErrorCode.SYSTEM_ERROR, "应用代码不存在，请先生成代码");
         }
-        //7.复制文件到部署目录
+        //7.Vue项目特殊处理：执行构建
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if(codeGenTypeEnum == CodeGenTypeEnum.VUE_PROJECT){
+            //vue项目构建
+            boolean buildSuccess = vueProjectBuider.buildProject(sourceDirPath);
+            ThrowUtils.throwIf(!buildSuccess, ErrorCode.SYSTEM_ERROR, "Vue 项目构建失败，请检查代码和依赖");
+            //检查dist目录是否存在
+            File disDir = new File(sourceDirPath, "dist");
+            ThrowUtils.throwIf(!disDir.exists(), ErrorCode.SYSTEM_ERROR, "Vue 项目构建完成，但未生成dist目录");
+            //将dist目录作为部署源
+            sourceDir = disDir;
+            log.info("Vue 项目构建成功，dist目录已生成：{}", disDir.getAbsolutePath());
+        }
+        //8.复制文件到部署目录
         String deployDirPath = AppConstant.CODE_DEPLOY_ROOT_DIR + "/" + deployKey;
         try {
             FileUtil.copyContent(sourceDir, new File(deployDirPath), true);
         } catch (Exception e) {
             ThrowUtils.throwIf(true, ErrorCode.SYSTEM_ERROR, "复制文件失败");
         }
-        //8.更新应用的deployKey和部署时间
+        //9.更新应用的deployKey和部署时间
         App updateApp = new App();
         updateApp.setDeployKey(deployKey);
         updateApp.setDeployedTime(LocalDateTime.now());
         updateApp.setId(appId);
         boolean result = updateById(updateApp);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
-        //9.返回部署地址
-        return String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 10. 构建应用访问 URL
+        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 11. 异步生成截图并更新应用封面
+        generateAppScreenshotAsync(appId, appDeployUrl);
+        return appDeployUrl;
+    }
+
+    /**
+     * 异步生成应用截图并更新封面
+     *
+     * @param appId  应用ID
+     * @param appUrl 应用访问URL
+     */
+    @Override
+    public void generateAppScreenshotAsync(Long appId, String appUrl) {
+        // 使用虚拟线程异步执行
+        Thread.startVirtualThread(() -> {
+            // 调用截图服务生成截图并上传
+            String screenshotUrl = screenshotService.generateAndUploadScreenshot(appUrl);
+            // 更新应用封面字段
+            App updateApp = new App();
+            updateApp.setId(appId);
+            updateApp.setCover(screenshotUrl);
+            boolean updated = this.updateById(updateApp);
+            ThrowUtils.throwIf(!updated, ErrorCode.OPERATION_ERROR, "更新应用封面字段失败");
+        });
     }
 
     /**
@@ -174,7 +205,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App>  implements AppS
         // 应用名称暂时为 initPrompt 前 12 位
         app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
         // 暂时设置为多文件生成
-        app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
+        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
         // 插入数据库
         boolean result = save(app);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
